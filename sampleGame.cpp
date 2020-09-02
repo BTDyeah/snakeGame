@@ -1,8 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
-#include <deque>
 #include <random>
-#include <iterator>
 
 class Game {
     public:
@@ -18,15 +16,17 @@ class Game {
         void foodCollision();
     private:
         sf::RenderWindow myWindow;
-        std::deque<sf::RectangleShape> snake;
         sf::RectangleShape fruit;
         enum class Dir {UP, DOWN, LEFT, RIGHT};
         Dir direction;
-        sf::Texture texture;
-        sf::Sprite sprite;
+        sf::Texture snakeTexture, tailTexture;
+        sf::Sprite snakeSprite, tailSprite;
+        std::random_device rd;
+        std::mt19937 gen;
+        std::uniform_int_distribution<> cod;
 };
 
-Game::Game() : myWindow(sf::VideoMode(640, 480), "snakeGame!", sf::Style::Close | sf::Style::Titlebar), snake(3) {
+Game::Game() : myWindow(sf::VideoMode(550, 550), "snakeGame!", sf::Style::Close | sf::Style::Titlebar), gen(rd()), cod(1, 520) {
         direction = Dir::UP;
         /*
         0,0,40,10 right
@@ -35,27 +35,38 @@ Game::Game() : myWindow(sf::VideoMode(640, 480), "snakeGame!", sf::Style::Close 
         10, 20, 10, 40 down
         */
         
-        texture.loadFromFile("wholeSnake.png", sf::IntRect(0, 20, 10 ,40));
-        sprite.setPosition(124, 120);
-
+        if(!snakeTexture.loadFromFile("wholeSnake.png", sf::IntRect(0, 20, 10 , 40)))
+                return;
         
-        
-        /*THE ANIMATION PART*/
-        /*switch(direction){
-            case Dir::RIGHT: x = 0; y = 0; w = 40; h = 10;   xPos += 1;   sprite.setPosition(xPos + 1, yPos);   break;
-            case Dir::LEFT:  x = 0; y = 10; w = 40; h = 10;  xPos -= 1;   sprite.setPosition(xPos - 1, yPos);   break;
-            case Dir::UP:    x = 0; y = 20; w = 10; h = 40;  yPos -= 1;   sprite.setPosition(xPos, yPos - 1);   break;
-            case Dir::DOWN:  x = 10; y = 20; w = 10; h = 40; yPos += 1;   sprite.setPosition(xPos, yPos + 1);   break;
-        }            
-        */
+        if(!tailTexture.loadFromFile("wholeSnake.png", sf::IntRect(0, 0, 10 , 10)))
+                return;
 
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<> cod(1, 640);
+        /*
+        if(!texture.loadFromFile("wholeSnake.png", sf::IntRect(0, 20, 10 ,40)) && !(direction == Dir::UP))
+                return;
+        else 
+        if(!texture.loadFromFile("wholeSnake.png", sf::IntRect(10, 20, 10 ,40)) && !(direction == Dir::DOWN))
+                return;
+        else
+        if(!texture.loadFromFile("wholeSnake.png", sf::IntRect(0, 10, 40 ,10)) && !(direction == Dir::LEFT))
+                return;
+        else
+        if(!texture.loadFromFile("wholeSnake.png", sf::IntRect(0, 0, 40 ,10)) && !(direction == Dir::RIGHT))
+                return;
+        */        
+
+        snakeSprite.setTexture(snakeTexture);
+        tailSprite.setTexture(tailTexture);
+
+        //A QUICK TOUGHT THAT I MAY NOT FUNDAMENTALLY BE WRONG ABOUT THINGS LIKE THIS FOR ANIMATING BUT THAT I NEED ANOTHER SPRITE.SETTEXTURE()?
+        
 
         fruit.setSize(sf::Vector2f(10, 10));
         fruit.setFillColor(sf::Color::Red);
         fruit.setPosition(cod(gen), cod(gen));
+
+        snakeSprite.setPosition(cod(gen), cod(gen));
+
 }
 
 void Game::run(){
@@ -85,27 +96,44 @@ void Game::handlePlayerInput(sf::Keyboard::Key key){
 
 void Game::update(){
         sf::Vector2f movement(0.0f, 0.0f);
-        if (direction == Dir::UP)    movement.y -= 0.03f;
-        if (direction == Dir::DOWN)  movement.y += 0.03f;
-        if (direction == Dir::LEFT)  movement.x -= 0.03f;
-        if (direction == Dir::RIGHT) movement.x += 0.03f;
+        if (direction == Dir::UP)    movement.y -= 0.01f;
+        if (direction == Dir::DOWN)  movement.y += 0.01f;
+        if (direction == Dir::LEFT)  movement.x -= 0.01f;
+        if (direction == Dir::RIGHT) movement.x += 0.01f;
 
         isColliding(movement);
 }
 
 void Game::render(){
         myWindow.clear();
-        myWindow.draw(sprite);   
+        myWindow.draw(snakeSprite);   
         myWindow.draw(fruit);
         myWindow.display();
 }
 
+/*
+1. Make a seperate head(harder on spritesheet but easier on coding it) 
+2. Make it work so only head counts the other way(intersects()???)
+*/
+
 void Game::isColliding(sf::Vector2f mov){
-        if (sprite.getPosition().x < 0 ) { mov.x = myWindow.getSize().x - sprite.getLocalBounds().width;  }
-        if (sprite.getPosition().y < 0 ) { mov.y = myWindow.getSize().y - sprite.getLocalBounds().height; }
-        if (sprite.getPosition().x + sprite.getLocalBounds().width > myWindow.getSize().x )  { mov.x = sprite.getLocalBounds().width -  myWindow.getSize().x; }
-        if (sprite.getPosition().y + sprite.getLocalBounds().height > myWindow.getSize().y ) { mov.y = sprite.getLocalBounds().height - myWindow.getSize().y;}
-        sprite.move(mov);
+        if (snakeSprite.getPosition().x < 0 ) { mov.x = myWindow.getSize().x - snakeSprite.getLocalBounds().width;  }
+        if (snakeSprite.getPosition().y < 0 ) { mov.y = myWindow.getSize().y - snakeSprite.getLocalBounds().height; }
+        if (snakeSprite.getPosition().x + snakeSprite.getLocalBounds().width > myWindow.getSize().x )  { mov.x = snakeSprite.getLocalBounds().width -  myWindow.getSize().x; }
+        if (snakeSprite.getPosition().y + snakeSprite.getLocalBounds().height > myWindow.getSize().y ) { mov.y = snakeSprite.getLocalBounds().height - myWindow.getSize().y;}
+        snakeSprite.move(mov);
+        
+       
+
+        if (snakeSprite.getPosition().x < fruit.getPosition().x && snakeSprite.getPosition().y < fruit.getPosition().y
+            && snakeSprite.getPosition().x + snakeSprite.getLocalBounds().width > fruit.getGlobalBounds().left
+            && snakeSprite.getPosition().y + snakeSprite.getLocalBounds().height > fruit.getGlobalBounds().top    
+           ) 
+           { 
+             fruit.setPosition(cod(gen), cod(gen)); 
+             tailSprite.setPosition(snakeSprite.getPosition().x + tailSprite.getGlobalBounds().width, snakeSprite.getPosition().y + tailSprite.getGlobalBounds().height);         
+           }
+
 }
 
 int main(){

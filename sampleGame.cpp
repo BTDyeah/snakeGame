@@ -125,14 +125,17 @@ void Game::isColliding(sf::Vector2f mov){
         
        
 
-        if (snakeSprite.getPosition().x < fruit.getPosition().x && snakeSprite.getPosition().y < fruit.getPosition().y
+        /*if (snakeSprite.getPosition().x < fruit.getPosition().x && snakeSprite.getPosition().y < fruit.getPosition().y
             && snakeSprite.getPosition().x + snakeSprite.getLocalBounds().width > fruit.getGlobalBounds().left
             && snakeSprite.getPosition().y + snakeSprite.getLocalBounds().height > fruit.getGlobalBounds().top    
            ) 
            { 
              fruit.setPosition(cod(gen), cod(gen)); 
-             tailSprite.setPosition(snakeSprite.getPosition().x + tailSprite.getGlobalBounds().width, snakeSprite.getPosition().y + tailSprite.getGlobalBounds().height);         
-           }
+             //tailSprite.setPosition(snakeSprite.getPosition().x + tailSprite.getGlobalBounds().width, snakeSprite.getPosition().y + tailSprite.getGlobalBounds().height);         
+           }*/
+        
+        if(snakeSprite.getGlobalBounds().intersects(fruit.getGlobalBounds()))
+                fruit.setPosition(cod(gen), cod(gen)); //easier than whole mess up but still eats with tail which is wrong
 
 }
 
